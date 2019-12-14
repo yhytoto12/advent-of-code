@@ -116,7 +116,8 @@ public :
 				input.pop();
 				i += 2;
 			} else if(opcode == 4) {
-				output = a[a[i + 1]];
+			    ll x; setMode(mode1, i + 1, x);
+				output = a[x];
 				i += 2;
 				return;
 			} else if(opcode == 99) {
