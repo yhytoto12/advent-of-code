@@ -14,7 +14,7 @@ ostream& operator<<(ostream &os, const vector<T> &v) { for (auto x : v) os << x 
 template<class U, class V>
 ostream& operator<<(ostream &os, const pair<U, V> &p) { return os << "(" << p.first << "," << p.second << ")";}
 
-int nthDigit(int x, int n) {
+int nthDigit(ll x, int n) {
 	int d = 1;
 	rep(i, n) d *= 10;
 	return x / d % 10;
@@ -22,25 +22,82 @@ int nthDigit(int x, int n) {
 
 class VMIntCodeComputer {
 private :
-	vector<ll> inst;
+	vector<ll> a;
 	ll phaseSetting;
-	bool isFirstInputInstruction = true;
-	int i, relative_base;
-	int input, output;
+	ll i, relative_base;
+	queue<ll> input;
+	ll output;
+	
+	void setMode(int mode, ll val, ll &resAddress) {
+	    if(mode == 0) resAddress = a[val];
+	    else if(mode == 1) resAddress = val; 
+	    else if(mode == 2) resAddress = a[val] + relative_base;
+	}
 	/* Instruction Implementation */
-	void ADD(int mode1, int mode2, int mode3, int v1, int v2, int v3) {
-
+	void ADD(int mode1, int mode2, int mode3, ll v1, ll v2, ll v3) {
+        setMode(mode1, v1, v1);
+        setMode(mode2, v2, v2);
+        setMode(mode3, v3, v3);
+        a[v3] = a[v1] + a[v2];
+        i += 4;
+	}
+	
+	void MUL(int mode1, int mode2, int mode3, ll v1, ll v2, ll v3) {
+        setMode(mode1, v1, v1);
+        setMode(mode2, v2, v2);
+        setMode(mode3, v3, v3);
+        a[v3] = a[v1] * a[v2];
+        i += 4;
+	}
+	
+	void JUMP_IF_TRUE(int mode1, int mode2, ll v1, ll v2) {
+	    setMode(mode1, v1, v1);
+	    setMode(mode2, v2, v2);
+	    if(a[v1] != 0) i = a[v2];
+	    else i += 3;
+	}
+	
+	void JUMP_IF_FALSE(int mode1, int mode2, ll v1, ll v2) {
+	    setMode(mode1, v1, v1);
+	    setMode(mode2, v2, v2);
+	    if(a[v1] == 0) i = a[v2];
+	    else i += 3;
+	}
+	
+	void LESS_THAN(int mode1, int mode2, int mode3, ll v1, ll v2, ll v3) {
+        setMode(mode1, v1, v1);
+        setMode(mode2, v2, v2);
+        setMode(mode3, v3, v3);
+        if(a[v1] < a[v2]) a[v3] = 1;
+        else a[v3] = 0;
+        i += 4;
+	}
+	
+	void EQUAL(int mode1, int mode2, int mode3, ll v1, ll v2, ll v3) {
+        setMode(mode1, v1, v1);
+        setMode(mode2, v2, v2);
+        setMode(mode3, v3, v3);
+        if(a[v1] == a[v2]) a[v3] = 1;
+        else a[v3] = 0;
+        i += 4;
+	}
+	
+	void ADJUST_RELATIVE_BASE(int mode1, ll v1) {
+	    setMode(mode1, v1, v1);
+	    relative_base += a[v1];
+	    i += 2;
 	}
 
 public :
 	bool is_halt;
-	VMIntCodeComputer(const vector<ll> &a, ll ps) {
-		inst = a;
+	VMIntCodeComputer(const vector<ll> &inst, ll ps) {
+		a = inst;
 		phaseSetting = ps;
 		i = 0;
 		relative_base = 0;
-		input = 0;
+		input.push(ps);
 		output = 0;
+		is_halt = false;
 	}
 
 	ll getOutput() {
@@ -48,16 +105,15 @@ public :
 	}
 
 	void run(ll in) {
+	    input.push(in);
 		while(!is_halt) {
-			int opcode = nthDigit(a[i], 0);
-			int mode1 = nthDigit(a[i], 1);
-			int mode2 = nthDigit(a[i], 2);
-			int mode3 = nthDigit(a[i], 3);
+			int opcode = nthDigit(a[i], 0) + nthDigit(a[i], 1) * 10;
+			int mode1 = nthDigit(a[i], 2);
+			int mode2 = nthDigit(a[i], 3);
+			int mode3 = nthDigit(a[i], 4);
 			if(opcode == 3) {
-				if(isFirstInputInstruction) {
-					a[a[i + 1]] = phaseSetting;
-					isFirstInputInstruction = false;
-				} else a[a[i + 1]] = in;
+				a[a[i + 1]] = input.front();
+				input.pop();
 				i += 2;
 			} else if(opcode == 4) {
 				output = a[a[i + 1]];
@@ -69,19 +125,19 @@ public :
 				return;
 			} else {
 				if(opcode == 1) {
-					ADD(mode1, mode2, mode3, a[i + 1], a[i + 2], a[i + 3]);
+					ADD(mode1, mode2, mode3, i + 1, i + 2, i + 3);
 				} else if(opcode == 2) {
-					MUL(mode1, mode2, mode3, a[i + 1], a[i + 2], a[i + 3]);
+					MUL(mode1, mode2, mode3, i + 1, i + 2, i + 3);
 				} else if(opcode == 5) {
-					NOT_ZERO(mode1, mode2, a[i + 1], a[i + 2]);
+					JUMP_IF_TRUE(mode1, mode2, i + 1, i + 2);
 				} else if(opcode == 6) {
-					ZERO(mode1, mode2, a[i + 1], a[i + 2]);
+					JUMP_IF_FALSE(mode1, mode2, i + 1, i + 2);
 				} else if(opcode == 7) {
-					LESS_THAN(mode1, mode2, mode3, a[i + 1], a[i + 2], a[i + 3]);
+					LESS_THAN(mode1, mode2, mode3, i + 1, i + 2, i + 3);
 				} else if(opcode == 8) {
-					EQUAL(mode1, mode2, mode3, a[i + 1], a[i + 2], a[i + 3]);
+					EQUAL(mode1, mode2, mode3, i + 1, i + 2, i + 3);
 				} else if(opcode == 9) {
-					ADJUST_RELATIVE_BASE(mode1, mode2, a[i + 1], a[i + 2]);
+					ADJUST_RELATIVE_BASE(mode1, i + 1);
 				} else {
 					// program error!
 				}
@@ -90,6 +146,39 @@ public :
 	}
 };
 
+void getInputString(vector<ll> &inputs) {
+    string s;
+    getline(cin, s);
+    int l = 0, r = 0;
+    while(l < sz(s)) {
+        if(s[r] != ',' && r < sz(s)) {
+            ++r;
+        } else {
+            inputs.push_back(stoll(s.substr(l, r - l)));
+            l = ++r;
+        }
+    }
+}
+
 int main() {
-	
+	vector<ll> inputs;
+	getInputString(inputs);
+	ll maxSignal = 0;
+	vector<ll> permutations = {5, 6, 7, 8, 9};
+	do {
+	    vector<VMIntCodeComputer> computers;
+	    rep(i, 5) {
+	        VMIntCodeComputer com(inputs, permutations[i]);
+	        computers.push_back(com);
+	    }
+	    ll outputSignal = 0;
+	    while(!computers[4].is_halt) {
+	        rep(i, 5) {
+	            computers[i].run(outputSignal);
+	            outputSignal = computers[i].getOutput();
+	        }
+	    }
+	    maxSignal = max(maxSignal, outputSignal);
+	} while(next_permutation(all(permutations)));
+	cout << maxSignal << "\n";
 } 
