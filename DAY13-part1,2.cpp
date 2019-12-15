@@ -181,14 +181,24 @@ int sign(int x) {
     else return 0;
 }
 
+char tiles[] = {' ', '#', 'O', '-', 'x'};
+
 ll part1(vector<ll> program) {
     VMIntCodeComputer computer(program);
+    vector<vector<int>> board(21, vector<int>(44, 0));
     int cnt = 0;
     while(!computer.is_halt) {
         int x = computer.run();
         int y = computer.run();
         int t = computer.run();
         if(t == 2) cnt++;
+        board[y][x] = t;
+    }
+    rep(i, 21) {
+        rep(j, 44) {
+            cout << tiles[board[i][j]];
+        }
+        cout << "\n";
     }
     return cnt;
 }
@@ -196,20 +206,21 @@ ll part1(vector<ll> program) {
 ll part2(vector<ll> program, ll quaters) {
     program[0] = quaters;
     VMIntCodeComputer computer(program);
-    int score = 0;
-    int ballX = 0, paddleX = 0;
+    ll score = 0;
+    ll ballX = 0, paddleX = 0;
     while(!computer.is_halt) {
-        int x = computer.run();
-        int y = computer.run();
-        int t = computer.run();
+        ll x = computer.run();
+        ll y = computer.run();
+        ll t = computer.run();
         computer.resetInput();
         if(x == -1 && y == 0) {
             score = t;
         } else {
             if(t == 3) {
-                ballX = x;
-            } else if(t == 4) {
                 paddleX = x;
+            }
+            if(t == 4) {
+                ballX = x;
             }
         }
         if(paddleX < ballX) computer.setInput(1);
@@ -223,7 +234,7 @@ int main() {
     /* get inputs */ 
 	vector<ll> program;
 	getInputString(program);
-	program.resize(300000);
-	cout << part1(program) << "\n";
-	cout << part2(program, 2) << "\n";
+	program.resize(500000);
+	cout << "Part 1 ans is : " << part1(program) << "\n";
+	cout << "Part 2 ans is : " << part2(program, 2) << "\n";
 }
