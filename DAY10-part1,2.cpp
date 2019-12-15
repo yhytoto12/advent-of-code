@@ -81,7 +81,7 @@ int main() {
     }
     b[Y][X] = -1;
     int cnt = 0;
-    int wantToFind = 5;
+    int wantToFind = 200;
     while(cnt < sz(a) - 1) {
         for(auto &p : mp) {
             if(!p.second.empty()) {
