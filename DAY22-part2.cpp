@@ -39,37 +39,34 @@ ll modpow(ll x, ll n, ll MOD) {
     return ret;
 }
 
+ll modinv(ll x, ll MOD) {
+    return modpow(x, MOD - 2, MOD);
+}
+
 int main() {
-    FAST_IO();
     const ll N = 119315717514047LL;
+    const ll T = 101741582076661LL;
     string statement;
     vector<string> techniques;
     while(getline(cin, statement)) {
         techniques.push_back(statement);
     }
-    ll pos = 2020;
-    reverse(all(techniques));
-    ll repeat = 0;
-    while(repeat++ < 7000) {
-        // cout << repeat << " times repeated : " << pos << " change into ";
-        for(auto &str : techniques) {
-            if(str[0] == 'c') {  // cut x
-                ll x = stoll(str.substr(4));
-                x = (x < 0) ? N + x : x;
-                if(pos >= 0 && pos < N - x) pos = pos + x;
-                else pos = pos - N + x;
-            } else if(str[5] == 'w') { // increment x
-                ll x = stoll(str.substr(20));
-                pos = modmul(pos, modpow(x, N - 2, N), N);
-            } else { // reverse
-                pos = N - 1 - pos;
-            }
-        }
-        // cout <<  pos << "\n";
-        if(pos == 2020) {
-            cout << "Found period : " << repeat << "\n";
-            break;
+    ll a = 1, b = 0;
+    for(auto &str : techniques) {
+        if(str[0] == 'c') {
+            ll x = stoll(str.substr(4));
+            b = (b - x + N) % N;
+        } else if(str[5] == 'w') {
+            ll x = stoll(str.substr(20));
+            a = a * x % N;
+            b = b * x % N;
+        } else {
+            a = (N - a) % N;
+            b = (N - b - 1) % N;
         }
     }
-    cout << "Not Found!\n";
+    ll A = modpow(a, T, N);
+    ll B = modmul(modmul(A - 1, modinv(a - 1, N), N), b, N);
+    // Ax + B = 2020 (mod N)
+    cout << modmul(modinv(A, N), (2020 - B + N) % N, N);
 }
