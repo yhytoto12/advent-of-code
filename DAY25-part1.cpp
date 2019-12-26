@@ -188,46 +188,75 @@ void getInputString(vector<ll> &inputs) {
 }
 
 string COMMAND[] = {
-    "north\n", "south\n", "east\n", "west\n"
+    "north\n", "east\n", "south\n", "west\n"
 };
 
-int dx[] = {0, 0, 1, -1};
-int dy[] = {-1, 1, 0, 0};
+int dx[] = {0, 1, 0, -1};
+int dy[] = {-1, 0, 1, 0};
+
+struct Node {
+    string place_name;
+    bool can_go[4];
+    Node *next[4];
+    bool item_exist;
+    string item_name;
+    Node() {
+        rep(i, 4) can_go[i] = false;
+        rep(i, 4) next[i] = nullptr;
+        item_exist = false;
+    }
+    ~Node() {
+        rep(i, 4) {
+            if(next[i] != nullptr) {
+                next[i]->next[(i + 2) % 2] = nullptr;
+                delete next[i];
+            }
+        }
+    }
+};
 
 int main() {
     vector<ll> program;
     getInputString(program);
     program.resize(200000);
     VMIntCodeComputer com(program);
-    //string input_str = "south\n";
-    //for(auto &ch : input_str) com.setInput(ch);
-    int output = 0;
-    int cnt = 0;
-    int MAXN = 30;
-    vector<vector<int>> A(MAXN, vector<int> (MAXN, -1));
-    // -1 : undefined, 0 : space, 1 : wall
-    int X = MAXN / 2, Y = MAXN / 2;
-    A[X][Y] = 0;
-    while(cnt < 100) {
-        output = com.run();
-        if(output == -1) {
-            int n = rand() % 4;
-            X += dx[n];
-            Y += dy[n];
-            A[X][Y] = 0;
-            // cout << "Do " << COMMAND[n];
-            for(auto &ch : COMMAND[n]) com.setInput(ch); 
-            ++cnt;
+    
+    Node *currNode = new Node();
+    int commandCnt = 0;
+    const int COMMAND_LIMIT = 8;
+    while(commandCnt++ < COMMAND_LIMIT) {
+        string info_str;
+        int out = 0;
+        while(out != -1) {
+            out = com.run();
+            info_str.push_back((char)out);
         }
-        /*else if(output >= 0 && output < 128) cout << (char) output;
-        else cout << output;*/
-    }
-    rep(i, MAXN) {
-        rep(j, MAXN) {
-            if(A[i][j] == -1) cout << " ";
-            else if(A[i][j] == 0) cout << ".";
-            else if(A[i][j] == 1) cout << "#";
+        cerr << info_str;
+        // parsing info_str and get data
+        // 1) parsing place_name  == ^string^ ==
+        int fe = 3; // first pos "=="
+        while(info_str[fe++] != '=') { }
+        int se = fe + 2; // second "=="
+        while(info_str[se++] != '=') { }
+        currNode->place_name = info_str.substr(fe + 3, se - fe - 4);
+        // 2) parsing Doors here lead:
+        currNode->can_go[0] = (info_str.find("- north") != string::npos);
+        currNode->can_go[1] = (info_str.find("- east") != string::npos);
+        currNode->can_go[2] = (info_str.find("- south") != string::npos);
+        currNode->can_go[3] = (info_str.find("- west") != string::npos);
+        // 3) parsing Items here:
+        currNode->item_exist = (info_str.find("Items here:") != string::npos);
+        if(currNode->item_exist) {
+            int p = info_str.find("Items here:") + 14;
+            while(info_str[p] != '\n') currNode->item_name.push_back(info_str[p++]);
+            // string input_str = "take " + currNode->item_name + "\n";
+            // for(auto &ch : input_str) com.setInput(ch);
         }
-        cout << "\n";
+        int rnd = rand() % 4;
+        while(!currNode->can_go[rnd]) rnd = rand() % 4;
+        currNode->next[rnd] = new Node();
+        currNode->next[(rnd + 2) % 4] = currNode;
+        currNode = currNode->next[rnd];
+        for(char &ch : COMMAND[rnd]) com.setInput(ch);
     }
 }
