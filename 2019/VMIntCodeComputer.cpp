@@ -122,6 +122,7 @@ public :
 			if(opcode == 3) {
 			 //   cout << "Input Instruction!\n";
 			    ll x = 0; setMode(mode1, i + 1, x);
+				if(input.empty()) return -1;
 				a[x] = input.front();
 				input.pop();
 				i += 2;
