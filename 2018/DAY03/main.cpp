@@ -50,4 +50,17 @@ int main() {
     std::cout << cnt << std::endl;
     
     // part2
+    std::vector<int> ans;
+    for(auto &clm : claims) {
+        bool notOverlap = true;
+        for(int i = 0; i < clm.sx; ++i) {
+            for(int j = 0; j < clm.sy; ++j) {
+                if(numberOfClaimed[clm.px + i][clm.py + j] != 1) notOverlap = false;
+            }
+        }
+        if(notOverlap) ans.push_back(clm.id);
+    }
+    std::cout << "the answer of part 2 is ";
+    for(auto &x : ans) std::cout << x << " ";
+    std::cout << std::endl; 
 }
