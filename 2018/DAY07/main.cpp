@@ -42,29 +42,34 @@ int part2(std::vector<std::vector<int>> &adj) {
     // topology sort
     std::priority_queue<int, std::vector<int>, std::greater<int>> Qstep;
     std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> Qtime;
-    Qtime.push(0);
-    std::vector<pair<int, int>> worker(5); // {end time, step}
-    for(int i = 0; i < 26; ++i) {
-        int t = Qtime.top().first; Qtime.pop();
-        int numberOfcanWork = 0;
-        for(int j = 0; j < 5; ++j) {
+    std::vector<std::pair<int, int>> worker(Nworker, {0, -1}); // {end time, step}
+    for(int i = 0; i < 26; ++i) if(indegree[i] == 0 && appear[i]) Qstep.push(i);
+    while(true) {
+        int t = 0;
+        if(!Qtime.empty()) {
+            t = Qtime.top().first; Qtime.pop();
+        }
+        for(int j = 0; j < Nworker; ++j) {
             if(worker[j].first <= t) {
                 int u = worker[j].second;
+                if(u == -1) continue;
                 for(auto &v : adj[u]) {
                     if(--indegree[v] == 0) Qstep.push(v);
                 }
             }
         }
-        for(int j = 0; j < 5; ++j) {
+        if(Qstep.empty()) break;
+        for(int j = 0; j < Nworker; ++j) {
             if(worker[j].first <= t && !Qstep.empty()) {
                 int u = Qstep.top(); Qstep.pop();
                 worker[j].first = t + u + duration;
+                worker[j].second = u;
+                Qtime.push({t + u + duration, u});
             }
         }
-        if(!appear[u]) continue;
     }
     int ans = 0;
-    for(int i = 0; i < 5; ++i) {
+    for(int i = 0; i < Nworker; ++i) {
         ans = std::max(ans, worker[i].first);
     }
     return ans;
@@ -85,6 +90,6 @@ int main() {
     std::cout << part1(adj) << std::endl;
     
     // part2
-    // std::cout << "the answer of part 2 is ";
+    std::cout << "the answer of part 2 is ";
     std::cout << part2(adj) << std::endl;
 }
