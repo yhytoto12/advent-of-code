@@ -20,8 +20,10 @@ int part1(std::vector<int> &A) {
 int boo(std::vector<int> &A, int i, std::vector<int> &value, int &n) {
     int idx = i + 2;
     int currNode = n;
+    std::vector<int> ref(A[i]);
     for(int k = 0; k < A[i]; ++k) {
-        idx = boo(A, idx, value, ++n);
+    	ref[k] = ++n;
+        idx = boo(A, idx, value, n);
     }
     if(idx == i + 2) { // no child
         for(int j = 0; j < A[i + 1]; ++j) {
@@ -29,14 +31,14 @@ int boo(std::vector<int> &A, int i, std::vector<int> &value, int &n) {
         }
     } else { // exist child
         for(int j = 0; j < A[i + 1]; ++j) {
-            value[currNode] += (A[idx + j] >= 100 ? 0 : value[A[idx + j]]);
+        	if(A[idx + j] > 0 && A[idx + j] <= A[i]) value[currNode] += value[ref[A[idx + j] - 1]];
         }
     }
     return idx + A[i + 1];
 }
 
 int part2(std::vector<int> &A) {
-    std::vector<int> value(100);
+    std::vector<int> value(10000);
     int n = 0;
     boo(A, 0, value, n);
     return value[0];
